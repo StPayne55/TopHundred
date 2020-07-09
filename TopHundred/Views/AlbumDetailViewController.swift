@@ -208,7 +208,7 @@ class AlbumDetailViewController: UIViewController {
     }
     
     @objc private func viewAlbumButtonWasSelected() {
-        guard let albumURL = viewModel?.album.url else {
+        guard let albumURL = viewModel?.album?.url else {
             let alert = UIAlertController(title: "Error", message: "There was no URL provided for this album", preferredStyle: .alert)
             self.present(alert, animated: true, completion: nil)
 

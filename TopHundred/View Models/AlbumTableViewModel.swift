@@ -17,7 +17,7 @@ protocol AlbumTableViewModelDelegate: class {
 
 // MARK: - Album Detail View Model
 class AlbumDetailViewModel {
-    var album: Album
+    var album: Album?
     
     init(album: Album) {
         self.album = album
@@ -27,28 +27,31 @@ class AlbumDetailViewModel {
 // MARK: - Album Table View Model
 class AlbumTableViewModel {
     weak var delegate: AlbumTableViewModelDelegate?
-    var dataSource: [Album]? {
-        didSet {
-            DispatchQueue.main.async {
-                self.delegate?.albumDataSourceWasUpdated()
-            }
-        }
-    }
+    var dataSource: [Album]?
     
     init(delegate: AlbumTableViewModelDelegate) {
         self.delegate = delegate
-        retrieveAlbums()
+        retrieveAlbums(url: AlbumFetcher.iTunesURL)
     }
     
-    private func retrieveAlbums() {
-        AlbumFetcher.shared.retrieveAlbums { (albums, error) in
+    func retrieveAlbums(url: URL?, completion: (() -> ())? = nil) {
+        guard let url = url else {
+            self.delegate?.errorOccurredWhileRetrieving(error: .sessionError(error: ResponseServerError.invalidURL))
+            completion?()
+            return
+        }
+
+        AlbumFetcher.shared.retrieveAlbums(url: url) { (albums, error) in
             if let e = error {
                 DispatchQueue.main.async {
                     self.delegate?.errorOccurredWhileRetrieving(error: .sessionError(error: e))
+                    completion?()
                 }
+            } else {
+                self.dataSource = albums
+                self.delegate?.albumDataSourceWasUpdated()
+                completion?()
             }
-            
-            self.dataSource = albums
         }
     }
 }

@@ -34,17 +34,13 @@ enum ResponseServerError : Error {
 // MARK: - Data Fetcher
 class AlbumFetcher {
     public static let shared = AlbumFetcher()
+    static let iTunesURL = URL(string: "https://rss.itunes.apple.com/api/v1/us/itunes-music/top-albums/all/100/explicit.json")
 
     /**
      Retrieves Albums from static URL.
      - parameter completion: Closure which provides an optional array of albums, or a server response error.
     */
-    func retrieveAlbums(completion: @escaping ([Album]?, ResponseServerError?) -> Void) {
-        guard let url = URL(string: "https://rss.itunes.apple.com/api/v1/us/itunes-music/top-albums/all/100/explicit.json") else {
-            completion(nil, .invalidURL)
-            return
-        }
-        
+    func retrieveAlbums(url: URL, completion: @escaping ([Album]?, ResponseServerError?) -> Void) {        
         if let data = try? Data(contentsOf: url) {
             if let albums = parseAlbumResults(data: data) {
                 completion(albums, nil)
