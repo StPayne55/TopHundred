@@ -7,7 +7,111 @@
 //
 
 import Foundation
+import UIKit
 
-class AlbumTableViewModel {
+// MARK: - Album Table View Model Delegate
+protocol AlbumTableViewModelDelegate: class {
+    func albumDataSourceWasUpdated()
+    func errorOccurredWhileRetrieving(error: ResponseServerError)
+}
+
+// MARK: - Album Detail View Model
+class AlbumDetailViewModel {
+    var album: Album
     
+    init(album: Album) {
+        self.album = album
+    }
+}
+
+// MARK: - Album Table View Model
+class AlbumTableViewModel {
+    weak var delegate: AlbumTableViewModelDelegate?
+    var dataSource: [Album]? {
+        didSet {
+            DispatchQueue.main.async {
+                self.delegate?.albumDataSourceWasUpdated()
+            }
+        }
+    }
+    
+    init(delegate: AlbumTableViewModelDelegate) {
+        self.delegate = delegate
+        retrieveAlbums()
+    }
+    
+    private func retrieveAlbums() {
+        AlbumFetcher.shared.retrieveAlbums { (albums, error) in
+            if let e = error {
+                DispatchQueue.main.async {
+                    self.delegate?.errorOccurredWhileRetrieving(error: .sessionError(error: e))
+                }
+            }
+            
+            self.dataSource = albums
+        }
+    }
+}
+
+// MARK: - Models
+struct Root: Codable {
+    let feed: Feed
+}
+
+/// Feed
+struct Feed: Codable {
+    let title, id, copyright, country, icon, updated: String
+    let author: Author
+    let links: [Link]
+    let results: [Album]
+}
+
+/// Author
+struct Author: Codable {
+    let name, uri: String
+}
+
+/// Link
+struct Link: Codable {
+    let linkSelf, alternate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case linkSelf = "self"
+        case alternate
+    }
+}
+
+/// Album
+struct Album: Codable {
+    let artistName, id, releaseDate, copyright, artworkUrl100, url,  name: String
+    let genres: [Genre]
+
+    func genreText() -> String {
+        let genreStringArray = genres.prefix(3).map({ return $0.name }) /// Return only 3 genres at most for sake of simplicity
+        return genreStringArray.joined(separator: " | ")
+    }
+    
+    func releaseDateFormattedString() -> String? {
+        let dateFormatterGet = DateFormatter()
+        dateFormatterGet.dateFormat = "yyyy-MM-dd"
+
+        let dateFormatterPrint = DateFormatter()
+        dateFormatterPrint.dateFormat = "MMM dd, yyyy"
+
+        if let date = dateFormatterGet.date(from: releaseDate) {
+            return "Released on \(dateFormatterPrint.string(from: date))"
+        }
+        
+        return nil
+    }
+}
+
+/// Genre
+struct Genre: Codable {
+    let genreID, name, url: String
+
+    enum CodingKeys: String, CodingKey {
+        case genreID = "genreId"
+        case name, url
+    }
 }

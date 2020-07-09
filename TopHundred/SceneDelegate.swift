@@ -16,9 +16,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(frame: UIScreen.main.bounds)
 
+        
         let viewController = AlbumTableViewController()
         viewController.view.backgroundColor = .white
-        window?.rootViewController = viewController
+        let navigationController = UINavigationController(rootViewController: viewController)
+
+        window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
         window?.windowScene = windowScene
     }
